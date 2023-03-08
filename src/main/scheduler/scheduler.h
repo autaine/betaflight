@@ -120,6 +120,7 @@ typedef enum {
     TASK_GPS_RESCUE,
 #endif
 #ifdef USE_MAG
+    TASK_COMPASS_RESCUE,
     TASK_COMPASS,
 #endif
 #ifdef USE_BARO

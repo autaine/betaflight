@@ -93,6 +93,7 @@
 #include "fc/stats.h"
 #include "fc/tasks.h"
 
+#include "flight/compass_rescue.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -783,6 +784,10 @@ void init(void)
         gpsRescueInit();
 #endif
     }
+#endif
+
+#ifdef USE_MAG
+    compassRescueInit();
 #endif
 
 #ifdef USE_LED_STRIP

@@ -124,6 +124,11 @@
 #define PARAM_NAME_POSITION_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_POSITION_ALTITUDE_D_LPF "altitude_d_lpf"
 
+// COMPASS
+#ifdef USE_MAG
+#define PARAM_NAME_COMPASS_RESCUE_ANGLE "compass_rescue_angle"
+#endif // USE_MAG
+
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"
 #define PARAM_NAME_GPS_SBAS_MODE "gps_sbas_mode"
@@ -171,3 +176,5 @@
 #endif
 #endif
 #endif
+
+#define PARAM_NAME_COMPASS_RESCUE_ALT_MODE "compass_rescue_alt_mode"

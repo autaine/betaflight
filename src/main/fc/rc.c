@@ -40,6 +40,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/compass_rescue.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/feedforward.h"
@@ -563,6 +564,16 @@ FAST_CODE void processRcCommand(void)
                 rcDeflectionAbs[axis] = 0;
             } else
 #endif
+#ifdef USE_MAG
+            if ((axis == FD_YAW) && FLIGHT_MODE(COMPASS_RESCUE_MODE)) {
+                // If GPS Rescue is active then override the setpointRate used in the
+                // pid controller with the value calculated from the desired heading logic.
+                angleRate = compassRescueGetYawRate();
+                // Treat the stick input as centered to avoid any stick deflection base modifications (like acceleration limit)
+                rcDeflection[axis] = 0;
+                rcDeflectionAbs[axis] = 0;
+            } else
+#endif
             {
                 // scale rcCommandf to range [-1.0, 1.0]
                 float rcCommandf;
@@ -661,7 +672,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 
         rcCommandBuff.X = rcCommand[ROLL];
         rcCommandBuff.Y = rcCommand[PITCH];
-        if ((!FLIGHT_MODE(ANGLE_MODE) && (!FLIGHT_MODE(HORIZON_MODE)) && (!FLIGHT_MODE(GPS_RESCUE_MODE)))) {
+        if ((!FLIGHT_MODE(ANGLE_MODE) && (!FLIGHT_MODE(HORIZON_MODE)) && (!FLIGHT_MODE(GPS_RESCUE_MODE)) && (!FLIGHT_MODE(COMPASS_RESCUE_MODE)))) {
             rcCommandBuff.Z = rcCommand[YAW];
         } else {
             rcCommandBuff.Z = 0;
@@ -669,7 +680,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
-        if ((!FLIGHT_MODE(ANGLE_MODE)&&(!FLIGHT_MODE(HORIZON_MODE)) && (!FLIGHT_MODE(GPS_RESCUE_MODE)))) {
+        if ((!FLIGHT_MODE(ANGLE_MODE)&&(!FLIGHT_MODE(HORIZON_MODE)) && (!FLIGHT_MODE(GPS_RESCUE_MODE)) && (!FLIGHT_MODE(COMPASS_RESCUE_MODE)))) {
             rcCommand[YAW] = rcCommandBuff.Z;
         }
     }

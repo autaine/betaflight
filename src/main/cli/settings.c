@@ -80,6 +80,7 @@
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
+#include "pg/compass_rescue.h"
 #include "pg/dashboard.h"
 #include "pg/displayport_profiles.h"
 #include "pg/dyn_notch.h"
@@ -314,7 +315,7 @@ static const char * const lookupTableDtermLowpassType[] = {
 };
 
 static const char * const lookupTableFailsafe[] = {
-    "AUTO-LAND", "DROP", "GPS-RESCUE"
+    "AUTO-LAND", "DROP", "GPS-RESCUE", "COMPASS-RESCUE"
 };
 
 static const char * const lookupTableFailsafeSwitchMode[] = {
@@ -382,6 +383,10 @@ const char * const lookupTableRescueAltitudeMode[] = {
     "MAX_ALT", "FIXED_ALT", "CURRENT_ALT"
 };
 #endif
+
+const char * const lookupTableCompassRescueAltitudeMode[] = {
+    "MAX_ALT", "MIN_OR_CUR_ALT", "CURRENT_ALT"
+};
 
 #if defined(USE_VIDEO_SYSTEM)
 static const char * const lookupTableVideoSystem[] = {
@@ -539,6 +544,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRescueAltitudeMode),
 #endif
 #endif
+    LOOKUP_TABLE_ENTRY(lookupTableCompassRescueAltitudeMode),
 #ifdef USE_BLACKBOX
     LOOKUP_TABLE_ENTRY(lookupTableBlackboxDevice),
     LOOKUP_TABLE_ENTRY(lookupTableBlackboxMode),
@@ -995,6 +1001,8 @@ const clivalue_t valueTable[] = {
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 60 }, PG_ARMING_CONFIG, offsetof(armingConfig_t, auto_disarm_delay) },
     { PARAM_NAME_GYRO_CAL_ON_FIRST_ARM, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ARMING_CONFIG, offsetof(armingConfig_t, gyro_cal_on_first_arm) },
 
+// PG_COMPASS_RESCUE
+    { PARAM_NAME_COMPASS_RESCUE_ANGLE, VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 360 }, PG_COMPASS_RESCUE, offsetof(compassRescueConfig_t, angle) },
 
 // PG_GPS_CONFIG
 #ifdef USE_GPS
@@ -1045,6 +1053,8 @@ const clivalue_t valueTable[] = {
 #endif // USE_MAG
 #endif // USE_GPS_RESCUE
 #endif // USE_GPS
+
+    { PARAM_NAME_COMPASS_RESCUE_ALT_MODE,    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_COMPASS_RESCUE_ALT_MODE }, PG_COMPASS_RESCUE, offsetof(compassRescueConfig_t, altitudeMode) },
 
     { PARAM_NAME_DEADBAND,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 32 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, deadband) },
     { PARAM_NAME_YAW_DEADBAND,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_deadband) },

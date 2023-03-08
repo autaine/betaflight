@@ -82,6 +82,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/compass_rescue.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
@@ -1571,6 +1572,23 @@ case MSP_NAME:
 #endif
 #endif
 
+    case MSP_COMPASS_RESCUE_CONFIG:
+        sbufWriteU16(dst, compassRescueConfig()->ascendRate);
+        sbufWriteU16(dst, compassRescueConfig()->rescueAltitudeBufferM);
+        sbufWriteU16(dst, compassRescueConfig()->minReturnAltitudeM);
+        sbufWriteU8(dst, compassRescueConfig()->altitudeMode);
+        //sbufWriteU8(dst, compassRescueConfig()->throttleP);
+        //sbufWriteU8(dst, compassRescueConfig()->throttleI);
+        //sbufWriteU8(dst, compassRescueConfig()->throttleD);
+        sbufWriteU16(dst, compassRescueConfig()->direction);
+        sbufWriteU16(dst, compassRescueConfig()->angle);
+        sbufWriteU16(dst, compassRescueConfig()->throttleMin);
+        sbufWriteU16(dst, compassRescueConfig()->throttleMax);
+        sbufWriteU16(dst, compassRescueConfig()->throttleHover);
+        //sbufWriteU8(dst, compassRescueConfig()->yawP);
+        //sbufWriteU8(dst, compassRescueConfig()->rollMix);
+        break;
+
 #if defined(USE_ACC)
     case MSP_ACC_TRIM:
         sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.pitch);
@@ -2847,6 +2865,23 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 #endif
 #endif
+
+    case MSP_SET_COMPASS_RESCUE_CONFIG:
+        compassRescueConfigMutable()->ascendRate = sbufReadU16(src);
+        compassRescueConfigMutable()->rescueAltitudeBufferM = sbufReadU16(src);
+        compassRescueConfigMutable()->minReturnAltitudeM = sbufReadU16(src);
+        compassRescueConfigMutable()->altitudeMode = sbufReadU8(src);
+        //compassRescueConfigMutable()->throttleP = sbufReadU8(src);
+        //compassRescueConfigMutable()->throttleI = sbufReadU8(src);
+       // compassRescueConfigMutable()->throttleD = sbufReadU8(src);
+        compassRescueConfigMutable()->direction = sbufReadU16(src);
+        compassRescueConfigMutable()->angle = sbufReadU16(src);
+        compassRescueConfigMutable()->throttleMin = sbufReadU16(src);
+        compassRescueConfigMutable()->throttleMax = sbufReadU16(src);
+        compassRescueConfigMutable()->throttleHover = sbufReadU16(src);
+        //compassRescueConfigMutable()->yawP = sbufReadU8(src);
+        //compassRescueConfigMutable()->rollMix = sbufReadU8(src);
+        break;
 
     case MSP_SET_MOTOR:
         for (int i = 0; i < getMotorCount(); i++) {

@@ -47,6 +47,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/compass_rescue.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
@@ -618,6 +619,14 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 #endif
 
+#ifdef USE_MAG
+    // If compass rescue is active then override the throttle. This prevents things
+    // like throttle boost or throttle limit from negatively affecting the throttle.
+    if (FLIGHT_MODE(COMPASS_RESCUE_MODE)) {
+        throttle = compassRescueGetThrottle();
+    }
+#endif
+
     motorMixRange = motorMixMax - motorMixMin;
     if (mixerConfig()->mixer_type > MIXER_LEGACY) {
         applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
@@ -630,6 +639,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         && !mixerRuntime.feature3dEnabled
         && !airmodeEnabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE)   // disable motor_stop while GPS Rescue is active
+        && !FLIGHT_MODE(COMPASS_RESCUE_MODE)   // disable motor_stop while GPS Rescue is active
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
         // motor_stop handling
         applyMotorStop();

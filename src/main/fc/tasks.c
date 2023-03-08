@@ -53,6 +53,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/compass_rescue.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -256,6 +257,19 @@ static void taskGpsRescue(timeUs_t currentTimeUs)
 }
 #endif
 
+#ifdef USE_MAG // COMPASS_RESCUE
+static void taskCompassRescue(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (compassRescueIsConfigured()) {
+       compassRescueUpdate();
+    } else {
+        schedulerIgnoreTaskStateTime();
+    }
+}
+#endif
+
 #ifdef USE_BARO
 static void taskUpdateBaro(timeUs_t currentTimeUs)
 {
@@ -381,6 +395,10 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 
 #ifdef USE_GPS_RESCUE
     [TASK_GPS_RESCUE] = DEFINE_TASK("GPS_RESCUE", NULL, NULL, taskGpsRescue, TASK_PERIOD_HZ(TASK_GPS_RESCUE_RATE_HZ), TASK_PRIORITY_MEDIUM),
+#endif
+
+#ifdef USE_MAG
+    [TASK_COMPASS_RESCUE] = DEFINE_TASK("COMPASS_RESCUE", NULL, NULL, taskCompassRescue, TASK_PERIOD_HZ(TASK_GPS_RESCUE_RATE_HZ), TASK_PRIORITY_MEDIUM), // it is ok to use GPS Hz
 #endif
 
 #ifdef USE_MAG
@@ -531,6 +549,10 @@ void tasksInit(void)
 
 #ifdef USE_GPS_RESCUE
     setTaskEnabled(TASK_GPS_RESCUE, featureIsEnabled(FEATURE_GPS));
+#endif
+
+#ifdef USE_MAG
+    setTaskEnabled(TASK_COMPASS_RESCUE, featureIsEnabled(SENSOR_MAG));
 #endif
 
 #ifdef USE_MAG

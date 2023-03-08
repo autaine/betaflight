@@ -34,6 +34,11 @@
 #define USE_MAX7456
 #define USE_SDCARD
 #define USE_BARO_DPS310
+#define USE_VTX
+#define USE_OSD
+#define USE_OSD_SD
+#define USE_OSD_HD
+#define USE_MAG
 
 #define BEEPER_PIN           PC5
 #define MOTOR1_PIN           PB6

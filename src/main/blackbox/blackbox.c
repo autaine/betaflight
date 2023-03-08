@@ -1566,6 +1566,8 @@ static bool blackboxWriteSysinfo(void)
 #endif
 #endif
 
+        //BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_COMPASS_RESCUE_ALT_MODE, "%d",    gpsRescueConfig()->altitudeMode)
+
         default:
             return true;
     }

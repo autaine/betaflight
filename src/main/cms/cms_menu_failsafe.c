@@ -35,6 +35,8 @@
 #include "cms/cms_menu_gps_rescue.h"
 #endif
 
+#include "cms/cms_menu_compass_rescue.h"
+
 #include "config/feature.h"
 
 #include "config/config.h"
@@ -84,6 +86,7 @@ static const OSD_Entry cmsx_menuFailsafeEntries[] =
 #ifdef USE_CMS_GPS_RESCUE_MENU
     { "GPS RESCUE",       OME_Submenu, cmsMenuChange, &cmsx_menuGpsRescue},
 #endif
+    { "COMPASS RESCUE",   OME_Submenu, cmsMenuChange, &cmsx_menuCompassRescue},
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}
 };

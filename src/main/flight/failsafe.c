@@ -79,6 +79,9 @@ const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
 #ifdef USE_GPS_RESCUE
     "GPS-RESCUE",
 #endif
+#ifdef USE_MAG
+    "COMPASS_RES"
+#endif
 };
 
 /*
@@ -326,6 +329,12 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             failsafeState.phase = FAILSAFE_GPS_RESCUE;
                             break;
 #endif
+#ifdef USE_MAG
+                        case FAILSAFE_PROCEDURE_COMPASS_RESCUE:
+                            ENABLE_FLIGHT_MODE(COMPASS_RESCUE_MODE);
+                            failsafeState.phase = FAILSAFE_COMPASS_RESCUE;
+                            break;
+#endif
                     }
                     if (failsafeState.failsafeSwitchWasOn) {
                         failsafeState.receivingRxDataPeriodPreset = 0;
@@ -408,6 +417,9 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 failsafeState.active = false;
 #ifdef USE_GPS_RESCUE
                 DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+#endif
+#ifdef USE_MAG
+                DISABLE_FLIGHT_MODE(COMPASS_RESCUE_MODE);
 #endif
                 DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
                 unsetArmingDisabled(ARMING_DISABLED_FAILSAFE);

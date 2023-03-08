@@ -994,6 +994,8 @@ static void osdElementFlymode(osdElementParms_t *element)
 
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         strcpy(element->buff, "!FS!");
+    } else if (FLIGHT_MODE(COMPASS_RESCUE_MODE)) {
+        strcpy(element->buff, "CRES");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
         strcpy(element->buff, "RESC");
     } else if (FLIGHT_MODE(HEADFREE_MODE)) {
