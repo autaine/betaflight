@@ -1,0 +1,20 @@
+diff a/src/main/fc/init.c b/src/main/fc/init.c	(rejected hunks)
+@@ -98,6 +98,7 @@
+ #include "flight/pid.h"
+ #include "flight/pid_init.h"
+ #include "flight/servos.h"
++#include "flight/alt_hold.h"
+ 
+ #include "io/asyncfatfs/asyncfatfs.h"
+ #include "io/beeper.h"
+@@ -997,6 +998,10 @@ void init(void)
+ #endif
+ #endif
+ 
++#ifdef USE_ALTHOLD_MODE
++    initAltHoldState();
++#endif
++
+     swdPinsInit();
+ 
+     unusedPinsInit();

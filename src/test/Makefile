@@ -340,6 +340,13 @@ telemetry_crsf_msp_unittest_SRC := \
 telemetry_crsf_msp_unittest_DEFINES := \
 		USE_MSP_OVER_TELEMETRY=
 
+althold_unittest_SRC := \
+		$(USER_DIR)/flight/alt_hold.c \
+		$(USER_DIR)/common/maths.c \
+
+althold_unittest_DEFINES := \
+		USE_ALTHOLD_MODE= \
+
 
 telemetry_hott_unittest_SRC := \
 		$(USER_DIR)/telemetry/hott.c \

@@ -528,7 +528,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
     }
 
     // for ANGLE and HORIZON, smooth rcDeflection on pitch and roll to avoid setpoint steps
-    bool smoothingNeeded = (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && rcSmoothingData.filterInitialized;
+    bool smoothingNeeded = (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE)) && rcSmoothingData.filterInitialized;
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         if (smoothingNeeded && axis < FD_YAW) {
             rcDeflectionSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterDeflection[axis], rcDeflection[axis]);

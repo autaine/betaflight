@@ -52,6 +52,7 @@
 #include "flight/mixer.h"
 #include "flight/rpm_filter.h"
 #include "flight/feedforward.h"
+#include "flight/alt_hold.h"
 
 #include "io/gps.h"
 
@@ -451,7 +452,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 #endif
     angle = constrainf(angle, -levelAngleLimit, levelAngleLimit);
     const float errorAngle = angle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE) || FLIGHT_MODE(COMPASS_RESCUE_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(ALTHOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE) || FLIGHT_MODE(COMPASS_RESCUE_MODE)) {
         // ANGLE mode - control is angle based
         const float setpointCorrection = errorAngle * pidRuntime.levelGain;
         currentPidSetpoint = pt3FilterApply(&pidRuntime.attitudeFilter[axis], setpointCorrection);
@@ -561,7 +562,7 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
 {
     float ret = setPoint;
 
-    if (!FLIGHT_MODE(ANGLE_MODE) && !FLIGHT_MODE(HORIZON_MODE) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    if (!FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | GPS_RESCUE_MODE | COMPASS_RESCUE_MODE | ALTHOLD_MODE)) {
         bool resetIterm = false;
         float projectedAngle = 0;
         const int setpointSign = acroTrainerSign(setPoint);
@@ -857,7 +858,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     const bool gpsRescueIsActive = FLIGHT_MODE(GPS_RESCUE_MODE) || FLIGHT_MODE(COMPASS_RESCUE_MODE);
     levelMode_e levelMode;
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || gpsRescueIsActive) {
+    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(ALTHOLD_MODE) || FLIGHT_MODE(HORIZON_MODE) || gpsRescueIsActive) {
         if (pidRuntime.levelRaceMode && !gpsRescueIsActive) {
             levelMode = LEVEL_MODE_R;
         } else {
@@ -1105,6 +1106,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // no feedforward in launch control
         float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
+
+        // no feedforward in alt-hold
+        if (FLIGHT_MODE(ALTHOLD_MODE)) {
+            feedforwardGain = 0.0f;
+        }
+
         if (feedforwardGain > 0) {
             // halve feedforward in Level mode since stick sensitivity is weaker by about half
             feedforwardGain *= FLIGHT_MODE(ANGLE_MODE) ? 0.5f : 1.0f;

@@ -232,6 +232,7 @@ static bool accNeedsCalibration(void)
         // Check for any configured modes that use the ACC
         if (isModeActivationConditionPresent(BOXANGLE) ||
             isModeActivationConditionPresent(BOXHORIZON) ||
+            isModeActivationConditionPresent(BOXALTHOLD) ||
             isModeActivationConditionPresent(BOXGPSRESCUE) ||
             isModeActivationConditionPresent(BOXCAMSTAB) ||
             isModeActivationConditionPresent(BOXCALIB) ||
@@ -976,9 +977,25 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
+#ifdef USE_ALTHOLD_MODE
+    if (IS_RC_MODE_ACTIVE(BOXALTHOLD) && (sensors(SENSOR_ACC))) {
+        canUseHorizonMode = false;
+
+        if (!FLIGHT_MODE(ALTHOLD_MODE)) {
+            ENABLE_FLIGHT_MODE(ALTHOLD_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(ALTHOLD_MODE);
+    }
+#endif
+
     if (IS_RC_MODE_ACTIVE(BOXHORIZON) && canUseHorizonMode) {
 
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
+
+#ifdef USE_ALTHOLD_MODE
+        DISABLE_FLIGHT_MODE(ALTHOLD_MODE);
+#endif
 
         if (!FLIGHT_MODE(HORIZON_MODE)) {
             ENABLE_FLIGHT_MODE(HORIZON_MODE);

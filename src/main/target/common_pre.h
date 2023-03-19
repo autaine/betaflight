@@ -239,6 +239,7 @@
 #define USE_GPS_PLUS_CODES
 #define USE_LED_STRIP
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
+#define USE_ALTHOLD_MODE
 #endif
 
 #endif // !defined(CLOUD_BUILD)

@@ -49,6 +49,7 @@
 
 #include "flight/compass_rescue.h"
 #include "flight/failsafe.h"
+#include "flight/alt_hold.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer_init.h"
@@ -611,6 +612,14 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 #endif
 
+#ifdef USE_ALTHOLD_MODE
+    if (ARMING_FLAG(ARMED) && !failsafeIsActive()) {
+        float altHoldThrottle = getAltHoldThrottle();
+        float altHoldThrottleFactor = getAltHoldThrottleFactor(throttle);
+        throttle = throttle * (1.0f - altHoldThrottleFactor) + altHoldThrottle * altHoldThrottleFactor;
+    }
+#endif
+
 #ifdef USE_GPS_RESCUE
     // If gps rescue is active then override the throttle. This prevents things
     // like throttle boost or throttle limit from negatively affecting the throttle.
@@ -640,6 +649,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         && !airmodeEnabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE)   // disable motor_stop while GPS Rescue is active
         && !FLIGHT_MODE(COMPASS_RESCUE_MODE)   // disable motor_stop while GPS Rescue is active
+        && !FLIGHT_MODE(ALTHOLD_MODE) //  altitude hold is active
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
         // motor_stop handling
         applyMotorStop();

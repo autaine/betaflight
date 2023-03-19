@@ -81,6 +81,7 @@
 #define PG_GPS_RESCUE 55 // struct OK
 #define PG_POSITION 56
 #define PG_VTX_IO_CONFIG 57
+#define PG_ALTHOLD_CONFIG 58
 
 #define PG_COMPASS_RESCUE 99 // struct OK
 
