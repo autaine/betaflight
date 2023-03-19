@@ -47,7 +47,7 @@ extern "C" {
         return 0;
     }
 
-    bool baroIsCalibrationComplete(void)
+    bool baroIsCalibrated(void)
     {
         return 0;
     }

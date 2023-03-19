@@ -89,7 +89,7 @@ float simplePidCalculate(simplePid_s* simplePid, float dt, float targetValue, fl
 static float getCurrentAltitude(altHoldState_s* altHoldState)
 {
 #ifdef USE_BARO
-    if (sensors(SENSOR_BARO) && baroIsCalibrationComplete()) {
+    if (sensors(SENSOR_BARO) && baroIsCalibrated()) {
         return 0.01f * baro.altitude;
     }
 #endif
