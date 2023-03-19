@@ -27,6 +27,8 @@
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "config/config.h"
+#include "rx/rx.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 #include "fc/rc.h"
 #include "osd/osd.h"
@@ -36,7 +38,8 @@
 #include "build/debug.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 4);
+
 
 PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .velPidP = 30,
@@ -47,6 +50,8 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
 
     .minThrottle = 6,
     .maxThrottle = 65,
+
+    .maxVerticalVelocity = 30,
 );
 
 
@@ -84,7 +89,7 @@ float simplePidCalculate(simplePid_s* simplePid, float dt, float targetValue, fl
 static float getCurrentAltitude(altHoldState_s* altHoldState)
 {
 #ifdef USE_BARO
-    if (sensors(SENSOR_BARO) && baroIsCalibrated()) {
+    if (sensors(SENSOR_BARO) && baroIsCalibrationComplete()) {
         return 0.01f * baro.altitude;
     }
 #endif
@@ -112,10 +117,11 @@ void altHoldReset(altHoldState_s* altHoldState)
     altHoldState->throttle = 0.0f;
     altHoldState->enterTime = millis();
     altHoldState->exitTime = 0;
-    float externalVelocityEstimation = 0.01f * getEstimatedVario();
-    altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel - externalVelocityEstimation;
+    altHoldState->velocityEstimationVario = 0.01f * getEstimatedVario();
+    altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel - altHoldState->velocityEstimationVario;
     altHoldState->targetAltitude = getCurrentAltitude(altHoldState);
     altHoldState->smoothedAltitude = 0.01f;
+
 }
 
 void altHoldInit(altHoldState_s* altHoldState)
@@ -170,9 +176,38 @@ void altHoldProcessTransitions(altHoldState_s* altHoldState) {
     altHoldState->throttleFactor = 0.0f;
 }
 
+void altHoldUpdateTarget(altHoldState_s* altHoldState)
+{
+    float rcThrottle = rcCommand[THROTTLE];
+
+    rcThrottle -= rxConfig()->midrc;
+    rcThrottle = constrainf(rcThrottle, -500.0f, 500.0f);
+
+    rcThrottle = scaleRangef(rcThrottle, -500.0f, 500.0f, 0.0f, 1.0f);
+
+    float altitudeChangeMaxSpeed = 0.1f * altholdConfig()->maxVerticalVelocity;
+
+    if (rcThrottle < 0.25f) {
+        rcThrottle = scaleRangef(rcThrottle, 0.0f, 0.25f, -1.0f, 0.0f);
+    } else if (rcThrottle > 0.75f) {
+        rcThrottle = scaleRangef(rcThrottle, 0.75f, 1.0f, 0.0f, 1.0f);
+    } else {
+        rcThrottle = 0.0f;
+    }
+
+    altHoldState->targetVelocity = 0.01f * altitudeChangeMaxSpeed * rcThrottle;
+    float newTargetAltitude = altHoldState->targetAltitude + altHoldState->targetVelocity;
+
+    newTargetAltitude = MAX(newTargetAltitude, altHoldState->measuredAltitude - 20.0f);
+    newTargetAltitude = MIN(newTargetAltitude, altHoldState->measuredAltitude + 20.0f);
+
+    altHoldState->targetAltitude = newTargetAltitude;
+}
+
 void altHoldUpdate(altHoldState_s* altHoldState)
 {
     altHoldProcessTransitions(altHoldState);
+    altHoldUpdateTarget(altHoldState);
 
     float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
 
@@ -188,32 +223,44 @@ void altHoldUpdate(altHoldState_s* altHoldState)
 
     float measuredAccel = 9.8f * (accelerationVector.V.Z - acc.dev.acc_1G) / acc.dev.acc_1G;
 
-    DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(measuredAccel * 100.0f));
+//    DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(measuredAccel * 100.0f));
+
+    altHoldState->velocityEstimationVario = 0.01f * getEstimatedVario();
 
     altHoldState->velocityEstimationAccel += measuredAccel * timeInterval;
     altHoldState->velocityEstimationAccel *= 0.999f;
 
     float currentVelocityEstimationAccel = altHoldState->velocityEstimationAccel - altHoldState->startVelocityEstimationAccel;
-    DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(100.0f * currentVelocityEstimationAccel));
+//    DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(100.0f * currentVelocityEstimationAccel));
 
     altHoldState->measuredAltitude = measuredAltitude;
     altHoldState->measuredAccel = measuredAccel;
 
-    float velocityTarget = simplePidCalculate(&altHoldState->altPid, timeInterval, altHoldState->targetAltitude, altHoldState->measuredAltitude);
-    DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
+    float measuredAltitudeExtrapolated = altHoldState->measuredAltitude + 1.0f * altHoldState->velocityEstimationVario;
+
+    float velocityTarget = simplePidCalculate(&altHoldState->altPid, timeInterval, altHoldState->targetAltitude, measuredAltitudeExtrapolated);
+
+//    DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
 
     float velPidForce = simplePidCalculate(&altHoldState->velPid, timeInterval, velocityTarget, currentVelocityEstimationAccel);
 
     float newThrottle = velPidForce;
 
-    DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0f * velPidForce));
+//    DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0f * velPidForce));
 
     newThrottle = constrainf(newThrottle, 0.0f, 1.0f);
     newThrottle = scaleRangef(newThrottle, 0.0f, 1.0f, 0.01f * altholdConfig()->minThrottle, 0.01f * altholdConfig()->maxThrottle);
 
     if (altHoldState->altHoldEnabled) {
         altHoldState->throttle = newThrottle;
+
+        DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(altHoldState->targetAltitude * 100.0f));
+        DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(altHoldState->measuredAltitude * 100.0f));
+    } else {
+        DEBUG_SET(DEBUG_ALTHOLD, 0, 0);
+        DEBUG_SET(DEBUG_ALTHOLD, 1, 0);
     }
+
 }
 
 

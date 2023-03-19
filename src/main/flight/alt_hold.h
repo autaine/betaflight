@@ -39,7 +39,7 @@ typedef struct altholdConfig_s {
     uint16_t minThrottle;
     uint16_t maxThrottle;
 
-    uint8_t angleLimit;
+    uint16_t maxVerticalVelocity;
 } altholdConfig_t;
 
 PG_DECLARE(altholdConfig_t, altholdConfig);
@@ -60,9 +60,11 @@ typedef struct {
     float throttle;
     float throttleFactor;
     float targetAltitude;
+    float targetVelocity;
     float measuredAltitude;
     float measuredAccel;
     float velocityEstimationAccel;  // based on acceleration
+    float velocityEstimationVario;  // based on baro / gps
     float startVelocityEstimationAccel;
     bool altHoldEnabled;
     uint32_t enterTime;
