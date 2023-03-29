@@ -168,7 +168,9 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
     baroSensor_e baroHardware = baroHardwareToUse;
-
+#ifdef USE_FAKE_BARO
+    UNUSED(dev);
+#endif
 #if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_SPI_MS5611) && !defined(USE_BARO_BMP388) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280)&& !defined(USE_BARO_QMP6988) && !defined(USE_BARO_SPI_QMP6988) && !defined(USE_BARO_DPS310) && !defined(USE_BARO_SPI_DPS310) && !defined(DEFAULT_BARO_SPI_2SMBP_02B) && !defined(DEFAULT_BARO_2SMBP_02B)
     UNUSED(dev);
 #endif

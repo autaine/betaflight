@@ -40,7 +40,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
 
     .initialAltitudeM = 30,
     .rescueGroundspeed = 500,
-    .angle = 40,
+    .angle = 4, //40,
     .rollMix = 150,
 
     .descentDistanceM = 20,

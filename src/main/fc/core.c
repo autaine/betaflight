@@ -1014,15 +1014,14 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef USE_GPS_RESCUE
-    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_COMPASS_RESCUE))) {
+//    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_COMPASS_RESCUE))) {
+      if (ARMING_FLAG(ARMED) && ((failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_COMPASS_RESCUE))) {
         if (!FLIGHT_MODE(COMPASS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(COMPASS_RESCUE_MODE);
         }
     } else {
         DISABLE_FLIGHT_MODE(COMPASS_RESCUE_MODE);
     }
-#endif
 
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;

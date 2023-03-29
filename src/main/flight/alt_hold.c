@@ -37,6 +37,8 @@
 #include "math.h"
 #include "build/debug.h"
 
+// TODO REMOVE
+//static pt2Filter_t ah_throttleDLpf;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 4);
 
@@ -51,7 +53,7 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .minThrottle = 6,
     .maxThrottle = 65,
 
-    .maxVerticalVelocity = 30,
+    .maxVerticalVelocity = 3,// 30,
 );
 
 
@@ -64,6 +66,13 @@ void simplePidInit(simplePid_s* simplePid, float min, float max, float kp, float
     simplePid->ki = ki;
     simplePid->lastErr = 0;
     simplePid->integral = 0;
+/*
+    const float sampleTimeS = HZ_TO_INTERVAL(ALTHOLD_TASK_PERIOD);
+    float cutoffHz, gain;
+
+    cutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
+    gain = pt2FilterGain(cutoffHz, sampleTimeS);
+    pt2FilterInit(&ah_throttleDLpf, gain); */
 }
 
 float simplePidCalculate(simplePid_s* simplePid, float dt, float targetValue, float measuredValue)
@@ -185,21 +194,25 @@ void altHoldUpdateTarget(altHoldState_s* altHoldState)
 
     rcThrottle = scaleRangef(rcThrottle, -500.0f, 500.0f, 0.0f, 1.0f);
 
-    float altitudeChangeMaxSpeed = 0.1f * altholdConfig()->maxVerticalVelocity;
-
-    if (rcThrottle < 0.25f) {
+    //if (rcThrottle < 0.25f) {
+    if (rcThrottle < 0.3f) {
         rcThrottle = scaleRangef(rcThrottle, 0.0f, 0.25f, -1.0f, 0.0f);
-    } else if (rcThrottle > 0.75f) {
+    //} else if (rcThrottle > 0.75f) {
+    } else if (rcThrottle > 0.7f) {
         rcThrottle = scaleRangef(rcThrottle, 0.75f, 1.0f, 0.0f, 1.0f);
     } else {
         rcThrottle = 0.0f;
     }
 
+    float altitudeChangeMaxSpeed = 0.1f * altholdConfig()->maxVerticalVelocity;
     altHoldState->targetVelocity = 0.01f * altitudeChangeMaxSpeed * rcThrottle;
     float newTargetAltitude = altHoldState->targetAltitude + altHoldState->targetVelocity;
 
     newTargetAltitude = MAX(newTargetAltitude, altHoldState->measuredAltitude - 20.0f);
     newTargetAltitude = MIN(newTargetAltitude, altHoldState->measuredAltitude + 20.0f);
+
+    // Do not allow to set target altitule lower -1 meter
+    newTargetAltitude = MAX(newTargetAltitude, -1.f);
 
     altHoldState->targetAltitude = newTargetAltitude;
 }
@@ -261,6 +274,51 @@ void altHoldUpdate(altHoldState_s* altHoldState)
         DEBUG_SET(DEBUG_ALTHOLD, 1, 0);
     }
 
+    // LOGIC used in rescue
+    /*
+    static float velocityI = 0.0f;
+    static float previousPitchAdjustment = 0.0f;
+    static float throttleI = 0.0f;
+    static float previousAltitudeError = 0.0f;
+    static int16_t throttleAdjustment = 0;
+    
+    // currentAltitudeCm is updated at TASK_COMPASS_RESCUE_RATE_HZ
+    const float altitudeError = (altHoldState->targetAltitude - measuredAltitudeExtrapolated) * 0.01f;
+    // height above target in metres (negative means too low)
+    // at the start, the target starts at current altitude plus one step.  Increases stepwise to intended value.
+
+    // P component
+    const float throttleP = 15.f * altitudeError;
+
+    // I component
+    throttleI += 0.1f * 15.f * altitudeError * timeInterval;
+    const float maxIterm = 200.f;
+    throttleI = constrainf(throttleI, -1.0f * maxIterm, 1.0f * maxIterm);
+    // up to 20% increase in throttle from I alone
+
+    // D component is error based, so includes positive boost when climbing and negative boost on descent
+    float verticalSpeed = ((altitudeError - previousAltitudeError) / timeInterval);
+    previousAltitudeError = altitudeError;
+    //verticalSpeed += c_rescueState.intent.descentRateModifier * verticalSpeed; // no descent but maybe we should boost ascend
+    // add up to 2x D when descent rate is faster
+
+    float throttleD = pt2FilterApply(&ah_throttleDLpf, verticalSpeed);
+
+    throttleD = 15.f * throttleD;
+
+    float tiltAdjustment = 1.0f - getCosTiltAngle(); // 0 = flat, gets to 0.2 correcting on a windy day
+    tiltAdjustment *= 300.f;
+    // if hover is 1300, and adjustment .2, this gives us 0.2*300 or 60 of extra throttle, not much, but useful
+    // too much and landings with lots of pitch adjustment, eg windy days, can be a problem
+
+    // boost for some extra trottle action
+    tiltAdjustment *= 2.f;
+
+    throttleAdjustment = throttleP + throttleI + throttleD + tiltAdjustment;
+
+    newThrottle = 1300.f + throttleAdjustment;
+    newThrottle = constrainf(newThrottle, altholdConfig()->minThrottle, altholdConfig()->minThrottle);
+    */
 }
 
 

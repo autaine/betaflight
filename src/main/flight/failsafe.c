@@ -277,6 +277,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
 #ifdef USE_GPS_RESCUE
                             && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE
 #endif
+                            && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_COMPASS_RESCUE
                             ) {
                             //  JustDisarm if throttle was LOW for at least 'failsafe_throttle_low_delay' before failsafe
                             //  protects against false arming when the Tx is powered up after the quad
@@ -367,6 +368,8 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 break;
 #ifdef USE_GPS_RESCUE
             case FAILSAFE_GPS_RESCUE:
+#endif
+            case FAILSAFE_COMPASS_RESCUE:
                 if (receivingRxData) {
                     if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.failsafeSwitchWasOn) {
                         // exits the rescue immediately if failsafe was initiated by switch, otherwise 
@@ -385,7 +388,6 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     }
                 }
                 break;
-#endif
             case FAILSAFE_LANDED:
                 disarm(DISARM_REASON_FAILSAFE);
                 setArmingDisabled(ARMING_DISABLED_FAILSAFE);

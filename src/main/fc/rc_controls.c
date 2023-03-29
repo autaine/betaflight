@@ -112,9 +112,9 @@ bool areSticksInApModePosition(uint16_t ap_mode)
 
 throttleStatus_e calculateThrottleStatus(void)
 {
-    if (FLIGHT_MODE(ALTHOLD_MODE)) {
-        return THROTTLE_HIGH;
-    }
+    // if (FLIGHT_MODE(ALTHOLD_MODE)) {
+    //     return THROTTLE_HIGH;
+    // }
 
     if (featureIsEnabled(FEATURE_3D)) {
         if (IS_RC_MODE_ACTIVE(BOX3D) || flight3DConfig()->switched_mode3d) {
